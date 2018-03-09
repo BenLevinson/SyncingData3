@@ -15,7 +15,6 @@
         let socket; 
         let color;
         let hash;
-        let jump;
         let moveLeft;
         let moveRight;
         let users = {};
@@ -24,11 +23,15 @@
         let aKey = 65;
         let dKey = 68;
         let space = 32;
+        let userCreated = false;
+        let jump = false;
 
         const createUser = (data) => {
             hash = data.hash;
             users[hash] = data;
             requestAnimationFrame(draw);
+            userCreated = true;
+            console.log(users[hash]);
         }
         
         const removeUser = (data) => {
@@ -71,13 +74,13 @@
                 user.destX+=2;
                 console.log(user.destX + " " + user.destY);
             }
-            if(jump) {
+            if(jump && user.canJump) {
                 user.destY -= 100;
                 user.canJump = false;
-                jump = false;
             }
-            if(user.y >= 525 )
+            if(user.y >= 524)
                 user.canJump = true;
+            
             user.alpha = 0.1;
             socket.emit('moveUpdate', user);
         };
@@ -96,7 +99,9 @@
         const draw = (data) => {
             updatePos();
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
+            if(userCreated) {
+                getGrav();
+            }
             const keys = Object.keys(users);
             for(let i = 0; i < keys.length; i++) {
                 const user = users[keys[i]];
@@ -130,7 +135,7 @@
                 moveLeft = true;
             if(key === dKey || key === rightKey)
                 moveRight = true;
-            if(key === space && user.canJump) {
+            if(key === space) {
                 jump = true;
             }            
             if(moveLeft || moveRight || jump) {
@@ -147,9 +152,6 @@
             ctx = canvas.getContext("2d");
             color = 'rgb('+randomNum(255) + ',' + randomNum(255) + ',' + randomNum(255) +')';      
             socket = io.connect();
-            socket.on('connect', function () {
-                setInterval(getGrav, 10);
-            });     
             socket.on('joined', createUser);
             socket.on('updateMove', update);
             socket.on('updateGravity', updateGrav);
